@@ -1,13 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Optional
 
 from app.database.base import get_db
-from app.auth import utils, schemas
+from app.health import utils, schemas
 
 router = APIRouter()
 
-# Health Articles endpoints
 @router.get("/articles/{article_id}", response_model=schemas.HealthArticle)
 def read_article(article_id: int, db: Session = Depends(get_db)):
     """

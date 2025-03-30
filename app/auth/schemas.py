@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
 # User schemas
@@ -27,24 +27,3 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-class HealthArticleBase(BaseModel):
-    title: str
-    content: str
-    category: str
-    tags: str
-    author: str
-
-class HealthArticleCreate(HealthArticleBase):
-    pass
-
-class HealthArticle(HealthArticleBase):
-    id: int
-    created_at: str
-
-    class Config:
-        from_attributes = True
-
-class HealthArticleList(BaseModel):
-    articles: List[HealthArticle]
-    total: int

@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.router import router as auth_router
-from app.auth.health_router import router as health_router
+from app.health.router import router as health_router
+from app.community import community_router
 from app.config import settings
 from app.database.base import Base, engine
 
@@ -27,6 +28,7 @@ app.add_middleware(
 # Include routers
 app.include_router(auth_router, prefix=f"{settings.API_V1_STR}/auth", tags=["认证"])
 app.include_router(health_router, prefix=f"{settings.API_V1_STR}/health", tags=["健康"])
+app.include_router(community_router, prefix=f"{settings.API_V1_STR}")
 
 @app.get("/")
 def read_root():
@@ -39,6 +41,9 @@ def read_root():
             f"{settings.API_V1_STR}/auth/login",
             f"{settings.API_V1_STR}/auth/register",
             f"{settings.API_V1_STR}/health/week-info",
-            f"{settings.API_V1_STR}/health/articles"
+            f"{settings.API_V1_STR}/health/articles",
+            f"{settings.API_V1_STR}/community/posts",
+            f"{settings.API_V1_STR}/community/posts/{{post_id}}/comments",
+            f"{settings.API_V1_STR}/community/posts/{{post_id}}/like"
         ]
     }

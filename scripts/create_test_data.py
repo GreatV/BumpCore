@@ -41,6 +41,50 @@ def create_tables(conn):
     )
     ''')
     
+    # 创建社区帖子表
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        type TEXT NOT NULL,
+        tags TEXT,
+        author_id INTEGER NOT NULL,
+        likes_count INTEGER DEFAULT 0,
+        comments_count INTEGER DEFAULT 0,
+        is_hot BOOLEAN DEFAULT FALSE,
+        created_at DATETIME,
+        updated_at DATETIME,
+        FOREIGN KEY(author_id) REFERENCES users(id)
+    )
+    ''')
+    
+    # 创建评论表
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        post_id INTEGER NOT NULL,
+        author_id INTEGER NOT NULL,
+        created_at DATETIME,
+        FOREIGN KEY(post_id) REFERENCES posts(id),
+        FOREIGN KEY(author_id) REFERENCES users(id)
+    )
+    ''')
+    
+    # 创建点赞表
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS post_likes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        created_at DATETIME,
+        FOREIGN KEY(post_id) REFERENCES posts(id),
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        UNIQUE(post_id, user_id)
+    )
+    ''')
+    
     conn.commit()
 
 def insert_test_data(conn):
@@ -366,6 +410,103 @@ def insert_test_data(conn):
             article["tags"],
             article["author"],
             article["created_at"]
+        ))
+    
+    # Get user IDs from the database
+    cursor.execute("SELECT id, username FROM users")
+    users = {row[1]: row[0] for row in cursor.fetchall()}  # Map username to id
+
+    # 插入社区测试帖子
+    test_posts = [
+        {
+            "title": "孕期心跳加速很厉害是正常的吗？",
+            "content": "最近感觉心跳比平时快了很多，有时甚至会有点喘不上气，这是正常的孕期反应吗？有经验的妈妈能解答一下吗？",
+            "type": "QUESTION",
+            "tags": '["孕期反应", "求助"]',
+            "author_id": users['alice'],  # Using alice's actual ID
+            "likes_count": 15,
+            "comments_count": 8,
+            "is_hot": False,
+            "created_at": datetime.utcnow().isoformat()
+        },
+        {
+            "title": "分享一下我的待产包清单",
+            "content": "作为二胎妈妈，想分享一下我准备的待产包清单，希望对准备生产的姐妹们有帮助！1.换洗衣物：哺乳内衣2件、睡衣2套、内裤5条、袜子3双...",
+            "type": "EXPERIENCE",
+            "tags": '["待产准备", "经验分享"]',
+            "author_id": users['bob'],  # Using bob's actual ID
+            "likes_count": 56,
+            "comments_count": 23,
+            "is_hot": True,
+            "created_at": datetime.utcnow().isoformat()
+        },
+        {
+            "title": "老婆怀孕后，我该如何照顾她？",
+            "content": "老婆刚刚确认怀孕了，作为新手爸爸，想咨询一下我该如何更好地照顾她？有什么需要特别注意的事项吗？",
+            "type": "QUESTION",
+            "tags": '["准爸爸", "孕期护理"]',
+            "author_id": users['carol'],  # Using carol's actual ID
+            "likes_count": 89,
+            "comments_count": 42,
+            "is_hot": True,
+            "created_at": datetime.utcnow().isoformat()
+        }
+    ]
+    
+    for post in test_posts:
+        cursor.execute('''
+        INSERT OR REPLACE INTO posts 
+        (title, content, type, tags, author_id, likes_count, comments_count, is_hot, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            post["title"],
+            post["content"],
+            post["type"],
+            post["tags"],
+            post["author_id"],
+            post["likes_count"],
+            post["comments_count"],
+            post["is_hot"],
+            post["created_at"],
+            post["created_at"]  # Initially same as created_at
+        ))
+    
+    # Get post IDs from the database for comments
+    cursor.execute("SELECT id FROM posts LIMIT 3")
+    post_ids = [row[0] for row in cursor.fetchall()]
+
+    # 插入一些测试评论
+    test_comments = [
+        {
+            "content": "这是很正常的现象，建议多休息，保持心情愉快。",
+            "post_id": post_ids[0] if len(post_ids) > 0 else None,
+            "author_id": users['bob'],
+            "created_at": datetime.utcnow().isoformat()
+        },
+        {
+            "content": "清单很详细，感谢分享！",
+            "post_id": post_ids[1] if len(post_ids) > 1 else None,
+            "author_id": users['carol'],
+            "created_at": datetime.utcnow().isoformat()
+        },
+        {
+            "content": "多陪伴，保持耐心最重要。",
+            "post_id": post_ids[2] if len(post_ids) > 2 else None,
+            "author_id": users['alice'],
+            "created_at": datetime.utcnow().isoformat()
+        }
+    ]
+    
+    for comment in test_comments:
+        cursor.execute('''
+        INSERT OR REPLACE INTO comments 
+        (content, post_id, author_id, created_at)
+        VALUES (?, ?, ?, ?)
+        ''', (
+            comment["content"],
+            comment["post_id"],
+            comment["author_id"],
+            comment["created_at"]
         ))
     
     conn.commit()
